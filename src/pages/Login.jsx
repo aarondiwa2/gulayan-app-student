@@ -123,13 +123,13 @@ function Login() {
             </div>
           </div>
 
-          {/* Sign Up Link */}
-          {/* TODO disable sign up link while logging in */}
+          {/* ui: disable sign up link while logging in */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
             <button
               onClick={() => navigate('/signup')}
-              className="cursor-pointer text-green-600 hover:text-green-700 font-semibold">
+              disabled={loading}
+              className="cursor-pointer text-green-600 hover:text-green-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
               Sign up for free
             </button>
           </p>
