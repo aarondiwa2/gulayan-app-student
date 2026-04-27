@@ -7,7 +7,6 @@ import { api } from '../api';
 import { toast } from 'sonner';
 
 function Records() {
-  //TODO: add loading icon while ongoing ang loading ng records.
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,15 +21,53 @@ function Records() {
   const isInInitialMount = useRef(true);
 
   const handleSearchPlants = async () => {
-    // TODO search from the the backend; in case that all records is not yet loaded
+    if (!searchTerm.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const response = await api.get(`plants/search?q=${encodeURIComponent(searchTerm)}`);
+      setRecords(response.data.data || response.data);
+      setHasMore(false); // Disable pagination during search
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error("Error searching records.");
+    } finally {
+      setIsLoading(false);
+    }
   }
   const handleLoadRecords = async (page = 1, append = false) => {
-    //TODO: load the data from the database
-    //TODO: implement paginated data loading
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    try {
+      const response = await api.get(`plants?page=${page}&limit=20`);
+      const newRecords = response.data.data || response.data;
+
+      if (append) {
+        setRecords(prev => [...prev, ...newRecords]);
+      } else {
+        setRecords(newRecords);
+      }
+
+      // Check if there are more pages
+      const totalPages = response.data.totalPages || Math.ceil((response.data.total || 0) / 20);
+      setHasMore(page < totalPages && newRecords.length > 0);
+    } catch (error) {
+      console.error('Load records error:', error);
+      toast.error("Error loading records.");
+      setHasMore(false);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
   }
   const handleAddRecord = async (formData) => {
     try {
-      //TODO: make add new record functional
+      const response = await api.post('plants', formData);
+      setRecords(prev => [response.data, ...prev]);
       toast.success("New record saved.");
     } catch (error) {
       console.error(error);
@@ -41,7 +78,10 @@ function Records() {
   }
   const handleUpdateRecord = async (data) => {
     try {
-      //TODO make update record functional
+      const response = await api.put(`plants/${data.id}`, data);
+      setRecords(prev => prev.map(record =>
+        record.id === data.id ? response.data : record
+      ));
       toast.success("Plant data updated.");
     } catch (error) {
       console.error(error);
@@ -63,11 +103,13 @@ function Records() {
       toast.error("Error encountered while deleting record.");
     }
   }
-  const filteredRecords = records.filter(record =>
-    record.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.variety?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.seedling_source?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const displayRecords = searchTerm
+    ? records // When searching, show search results directly
+    : records.filter(record =>
+        record.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.variety?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.seedling_source?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
   const loadMore = useCallback(() => {
     if (!isLoadingMore && hasMore && !searchTerm) {
       const nextPage = currentPage + 1;
@@ -110,14 +152,18 @@ function Records() {
       isInInitialMount.current = false;
       return;
     }
-    if (searchTerm) {
-      setCurrentPage(1);
-      setHasMore(false);
-    } else {
-      setCurrentPage(1);
-      setHasMore(true);
-      handleLoadRecords(1, false);
-    }
+
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.trim()) {
+        handleSearchPlants();
+      } else {
+        setCurrentPage(1);
+        setHasMore(true);
+        handleLoadRecords(1, false);
+      }
+    }, 300); // Debounce search by 300ms
+
+    return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
   return (
@@ -150,7 +196,6 @@ function Records() {
       </div>
 
       {/* Records Table */}
-      {/* TODO implement pagination plants table */}
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
           <table className="relative w-full">
@@ -178,7 +223,7 @@ function Records() {
                     </tr>
                   ) : (
                     <>
-                      {filteredRecords.map((record) => (
+                      {displayRecords.map((record) => (
                         <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-4 px-6 text-sm text-gray-800 font-medium">{record.name}</td>
                           <td className="py-4 px-6 text-sm text-gray-600">{record?.variety || "-"}</td>
@@ -233,7 +278,7 @@ function Records() {
           </table>
         </div>
 
-        {searchTerm && filteredRecords.length === 0 && (
+        {searchTerm && displayRecords.length === 0 && !isLoading && (
           <div className="text-center py-8 text-gray-500">
             No records found matching your search.
           </div>
