@@ -25,6 +25,8 @@ function ModalEditRecord({ isOpen, onClose, data, onSubmit }) {
         date_planted: data.date_planted || ''
       });
     }
+
+    
   }, [data]);
 
   const handleChange = (e) => {
