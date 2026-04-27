@@ -9,6 +9,7 @@ import Records from './pages/Records'
 import Settings from './pages/Settings'
 import { Toaster } from 'sonner';
 
+// sample data for testing
 function App() {
 
   return (
