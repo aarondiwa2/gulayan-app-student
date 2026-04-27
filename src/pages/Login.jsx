@@ -21,7 +21,17 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     //TODO make the login process functional
-
+    setLoading(true)
+    try {
+      const res = await api.post('/login', { email: formData.email, password: formData.password })
+      localStorage.setItem('token', res.data.token)
+      navigate('/')
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setLoading(false)
+    }
+    //
   }
 
   return (
