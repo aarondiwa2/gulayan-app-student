@@ -291,6 +291,87 @@ function Records() {
             No more records to load
           </div>
         )}
+
+        {/* Pagination Controls */}
+        {!searchTerm && records.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="text-sm text-gray-600">
+              Page {currentPage} {hasMore ? `of ${currentPage}` : ''}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setCurrentPage(1);
+                  handleLoadRecords(1, false);
+                }}
+                disabled={currentPage === 1 || isLoadingMore}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-white 
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                First
+              </button>
+              <button
+                onClick={() => {
+                  const prevPage = Math.max(1, currentPage - 1);
+                  setCurrentPage(prevPage);
+                  handleLoadRecords(prevPage, false);
+                }}
+                disabled={currentPage === 1 || isLoadingMore}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-white 
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => {
+                  const nextPage = currentPage + 1;
+                  setCurrentPage(nextPage);
+                  handleLoadRecords(nextPage, false);
+                }}
+                disabled={!hasMore || isLoadingMore}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-white 
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+              <button
+                onClick={() => {
+                  // Load all remaining pages at once
+                  const loadAll = async () => {
+                    setIsLoadingMore(true);
+                    let allRecords = [...records];
+                    let page = currentPage + 1;
+                    while (hasMore) {
+                      try {
+                        const response = await api.get(`/plants?page=${page}`);
+                        const newRecords = response.data.data || [];
+                        if (newRecords.length === 0) break;
+                        allRecords = [...allRecords, ...newRecords];
+                        const currentPageNum = response.data.current_page;
+                        const lastPage = response.data.last_page;
+                        if (currentPageNum >= lastPage) {
+                          setHasMore(false);
+                          break;
+                        }
+                        page++;
+                      } catch (error) {
+                        break;
+                      }
+                    }
+                    setRecords(allRecords);
+                    setIsLoadingMore(false);
+                  };
+                  loadAll();
+                }}
+                disabled={!hasMore || isLoadingMore}
+                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-white 
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Load All
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
