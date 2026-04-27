@@ -21,7 +21,7 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    //TODO make the login process functional
+    //feat: make the login process functional
     setLoading(true)
     try {
       const res = await api.post('/login', { email: formData.email, password: formData.password })
@@ -32,7 +32,6 @@ function Login() {
     } finally {
       setLoading(false)
     }
-    //
   }
 
   return (
