@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaLeaf, FaUsers, FaBoxOpen, FaChartLine } from "react-icons/fa";
 import axios from "axios";
+import { api } from "../api";
 
 function Dashboard() {
  
@@ -22,7 +23,16 @@ function Dashboard() {
 
 
   useEffect(() => {
-    // TODO fetch plants data from server
+    const fetchPlants = async () => {
+      try {
+        const response = await api.get("/plants");
+        setPlants(response.data);
+      } catch (error) {
+        console.error("Failed to fetch plants:", error);
+      }
+    };
+
+    fetchPlants();
   }, []);
 
   return (
